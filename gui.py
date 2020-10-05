@@ -7,6 +7,7 @@ checkbuttons = []
 checkvars = []
 emails_to_send = []
 selected_rows = []
+employees_id = []
 
 
 def state():
@@ -15,7 +16,7 @@ def state():
     items = list(map((lambda var: var.get()), checkvars))
     for index, item in enumerate(items):
         if item:
-            indeces.append(index)
+            indeces.append(str(index))
     return indeces
 
     # y = list(map((lambda var: var.get()), textvars))
@@ -36,18 +37,30 @@ def state():
     # print(selected_rows)
 
 
+def extract_selected_emails():
+    selected_rows_index = state()
+
+
 def test(tree):
     global emails_to_send
     # Extract email based on selected checkbox
     indeces = state()
     # print(indeces)
     # filter based on first value of tree :: nums
-    rows = tree.get_children()
-    for row in rows:
-        row_num = tree.item(row)["values"][0]
-        if row_num in indeces:
-            email = tree.item(row)["values"][1]
-            emails_to_send.append(email)
+    # rows = tree.get_children()
+    # for row in rows:
+    #     row_num = tree.item(row)["values"][0]
+    #     if row_num in indeces:
+    #         email = tree.item(row)["values"][1]
+    #         emails_to_send.append(email)
+
+    # print(emails_to_send)
+    # print(indeces)
+    # print(employees_id)
+
+    for item_id in indeces:
+        email = tree.item(item_id).get("values")[2]
+        emails_to_send.append(email)
 
     print(emails_to_send)
 
@@ -69,7 +82,7 @@ def checkbox(frame):
 
 
 def left_side(frame):
-    global emails_to_send
+    global emails_to_send, employees_id
 
     # employee tree
     tree = ttk.Treeview(frame, columns=("row", "name", "email"), show="headings")
@@ -85,13 +98,15 @@ def left_side(frame):
     # list of employees
     employees = code.employees(sheet)
     # insert rows number
+    rows_num = code.items(employees, column_name="row")
     names = code.items(employees, column_name="name")
     emails = code.items(employees, column_name="email")
-    nums = range(len(names))
+    ids = range(len(names))
 
     # populate row num, names and emails on mployee Tree
-    for num, name, email in zip(nums, names, emails):
-        tree.insert("", "end", values=(num, name, email))
+    for i, row_num, name, email in zip(ids, rows_num, names, emails):
+        employee_id = tree.insert("", "end", iid=i, values=(row_num, name, email))
+        employees_id.append(employee_id)
 
     # grid tree and button
     tree.grid()
