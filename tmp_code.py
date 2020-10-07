@@ -93,3 +93,13 @@ options = {
 }
 
 pdfkit.from_file("payroll.html", "payroll.pdf", options=options)
+
+# import fitz
+
+# doc = fitz.open("payroll.pdf")
+# page = doc[0]
+# pix = page.getPixmap()
+# # if you want save pdf image with person name you have to pass the name to writeImage
+# pix.writeImage("payroll.jpg")
+# print(dir(pix))
+# print(pix)

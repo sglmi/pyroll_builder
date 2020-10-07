@@ -11,6 +11,8 @@ openpyxl = "*"
 pdfkit = "*"
 pdfcrowd = "*"
 xhtml2pdf = "*"
+pillow = "*"
+pymupdf = "*"
 
 [requires]
 python_version = "3.8"

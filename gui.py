@@ -47,8 +47,10 @@ def highlight(tree):
     tree.selection_add(items)
 
 
-def extract_selected_emails():
-    selected_rows_index = state()
+# preview the employee payroll that has foucs on the tree
+def preview(tree):
+    pix = code.pdf_to_image("payroll.pdf")
+    imgdata = code.get_image_bytes(pix)
 
 
 def test(tree):
@@ -90,6 +92,12 @@ def test(tree):
 #         checkbutton.pack()
 #         checkbuttons.append(checkbutton)
 #         checkvars.append(var)
+
+
+# def onclick_tree_item(event):
+#     # print(dir(event))
+#     tree = event.widget
+#     # highlight(tree)
 
 
 def left_side(frame):
@@ -139,16 +147,21 @@ def left_side(frame):
         checkbutton.pack()
 
         checkvars.append(var)
-
+    # tree bind
+    # tree.bind("<<TreeviewSelect>>", onclick_tree_item)
     # grid tree and button
     tree.grid(row=0, column=0)
     send_button = ttk.Button(frame, text="Send", command=lambda: test(tree))
     send_button.grid(row=1, column=0)
+    # preview button
+    preview_button = ttk.Button(frame, text="Preview", command=lambda: preview(tree))
+    preview_button.grid(row=1, column=1)
 
 
 def main():
     root = tk.Tk()
     root.title("Payroll")
+    # root.geometry("800x400")
 
     mainframe = ttk.Frame(root)
     left_frame = ttk.Frame(mainframe, padding=5, relief="solid")
@@ -157,8 +170,8 @@ def main():
     check_frame.grid(row=0, column=0, sticky=(tk.N, tk.S))
     left_frame.grid(row=0, column=1, sticky=(tk.E, tk.W, tk.N, tk.S))
     right_frame.grid(row=0, column=2, sticky=(tk.E, tk.W, tk.N, tk.S))
-    label = ttk.Button(right_frame, text="Preview Payroll")
-    label.grid()
+    preview_label = ttk.Label(right_frame, text="Preview Payroll")
+    preview_label.grid()
 
     # display widgets
     # checkbox(check_frame)
@@ -166,7 +179,7 @@ def main():
 
     mainframe.pack(fill=tk.BOTH, expand=True)
     mainframe.columnconfigure(1, weight=1)
-    mainframe.columnconfigure(2, weight=6)
+    mainframe.columnconfigure(2, weight=10)
     mainframe.rowconfigure(0, weight=1)
 
     for child in mainframe.winfo_children():
