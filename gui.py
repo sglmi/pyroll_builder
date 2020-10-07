@@ -37,12 +37,23 @@ def state():
     # print(selected_rows)
 
 
+# Highligh checked rows
+def highlight(tree):
+    items = state()
+    # for item in items:
+    #     tree.selection_add(item)
+    selections = tree.selection()
+    tree.selection_remove(selections)
+    tree.selection_add(items)
+
+
 def extract_selected_emails():
     selected_rows_index = state()
 
 
 def test(tree):
     global emails_to_send
+    emails_to_send = []
     # Extract email based on selected checkbox
     indeces = state()
     # print(indeces)
@@ -65,27 +76,32 @@ def test(tree):
     print(emails_to_send)
 
 
-def checkbox(frame):
-    global checkbuttons, checkvars
-    # get active sheet
-    sheet = code.sheet()
-    # list of employees
-    employees = code.employees(sheet)
-    row_nums = code.items(employees, column_name="row")
+# def checkbox(frame):
+#     global checkbuttons, checkvars
+#     # get active sheet
+#     sheet = code.sheet()
+#     # list of employees
+#     employees = code.employees(sheet)
+#     row_nums = code.items(employees, column_name="row")
 
-    for row in row_nums:
-        var = tk.BooleanVar()
-        checkbutton = ttk.Checkbutton(frame, variable=var)
-        checkbutton.pack()
-        checkbuttons.append(checkbutton)
-        checkvars.append(var)
+#     for row in row_nums:
+#         var = tk.BooleanVar()
+#         checkbutton = ttk.Checkbutton(frame, variable=var)
+#         checkbutton.pack()
+#         checkbuttons.append(checkbutton)
+#         checkvars.append(var)
 
 
 def left_side(frame):
     global emails_to_send, employees_id
 
+    check_frame = ttk.Frame(frame)
+    tree_frame = ttk.Frame(frame)
+    check_frame.grid(row=0, column=0)
+    tree_frame.grid(row=0, column=1, sticky="snwe")
+
     # employee tree
-    tree = ttk.Treeview(frame, columns=("row", "name", "email"), show="headings")
+    tree = ttk.Treeview(tree_frame, columns=("row", "name", "email"), show="headings")
     # tree heading
     tree.heading("row", text="Row")
     tree.heading("name", text="Name")
@@ -108,10 +124,26 @@ def left_side(frame):
         employee_id = tree.insert("", "end", iid=i, values=(row_num, name, email))
         employees_id.append(employee_id)
 
+    ## ===> Checkboxes <===
+    global checkvars
+    # get active sheet
+    sheet = code.sheet()
+    # list of employees
+    employees = code.employees(sheet)
+    row_nums = code.items(employees, column_name="row")
+
+    for _ in row_nums:
+        var = tk.BooleanVar()
+        checkbutton = ttk.Checkbutton(check_frame, variable=var)
+        checkbutton.config(command=lambda: highlight(tree))
+        checkbutton.pack()
+
+        checkvars.append(var)
+
     # grid tree and button
-    tree.grid()
+    tree.grid(row=0, column=0)
     send_button = ttk.Button(frame, text="Send", command=lambda: test(tree))
-    send_button.grid(row=1)
+    send_button.grid(row=1, column=0)
 
 
 def main():
@@ -129,7 +161,7 @@ def main():
     label.grid()
 
     # display widgets
-    checkbox(check_frame)
+    # checkbox(check_frame)
     left_side(left_frame)
 
     mainframe.pack(fill=tk.BOTH, expand=True)
