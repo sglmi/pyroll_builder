@@ -19,23 +19,6 @@ def state():
             indeces.append(str(index))
     return indeces
 
-    # y = list(map((lambda var: var.get()), textvars))
-    # # print(x)
-    # # print(dir(chkvars[0]))
-    # # print(chkvars[0].get())
-    # # for item in chkvars:
-    # #     if item.get() == 1:
-    # #         print(chkvars.index(item.get()))
-    # print(x, y)
-    # global checkbuttons
-    # print(dir(checkbuttons[0]))
-    # global selected_rows
-    # for checkbutton in checkbuttons:
-    #     if checkbutton.instate(["selected"]):
-    #         selected_rows.append(checkbutton["text"])
-
-    # print(selected_rows)
-
 
 # Highligh checked rows
 def highlight(tree):
@@ -48,9 +31,26 @@ def highlight(tree):
 
 
 # preview the employee payroll that has foucs on the tree
-def preview(tree):
-    pix = code.pdf_to_image("payroll.pdf")
+def preview(tree, label):
+    # employee data
+    employee_id = tree.focus()
+    selected_employee_data = tree.item(employee_id)
+    print(selected_employee_data)
+    employee_name = selected_employee_data.get("values")[1]
+
+    sh = code.sheet()
+    employees = code.employees(sh)
+    employee = code.employee(employees, employee_name)
+    template = code.read_template()
+    payroll_html = code.create_payroll_html(employee, template)
+    payroll_pdf = code.html_to_pdf(payroll_html, "payroll.pdf")
+    pix = code.pdf_to_image(payroll_pdf)
+
+    # preview in tkinter
     imgdata = code.get_image_bytes(pix)
+    tkimg = tk.PhotoImage(data=imgdata)
+    label.img = tkimg
+    label.config(image=label.img)
 
 
 def test(tree):
@@ -58,19 +58,6 @@ def test(tree):
     emails_to_send = []
     # Extract email based on selected checkbox
     indeces = state()
-    # print(indeces)
-    # filter based on first value of tree :: nums
-    # rows = tree.get_children()
-    # for row in rows:
-    #     row_num = tree.item(row)["values"][0]
-    #     if row_num in indeces:
-    #         email = tree.item(row)["values"][1]
-    #         emails_to_send.append(email)
-
-    # print(emails_to_send)
-    # print(indeces)
-    # print(employees_id)
-
     for item_id in indeces:
         email = tree.item(item_id).get("values")[2]
         emails_to_send.append(email)
@@ -78,29 +65,7 @@ def test(tree):
     print(emails_to_send)
 
 
-# def checkbox(frame):
-#     global checkbuttons, checkvars
-#     # get active sheet
-#     sheet = code.sheet()
-#     # list of employees
-#     employees = code.employees(sheet)
-#     row_nums = code.items(employees, column_name="row")
-
-#     for row in row_nums:
-#         var = tk.BooleanVar()
-#         checkbutton = ttk.Checkbutton(frame, variable=var)
-#         checkbutton.pack()
-#         checkbuttons.append(checkbutton)
-#         checkvars.append(var)
-
-
-# def onclick_tree_item(event):
-#     # print(dir(event))
-#     tree = event.widget
-#     # highlight(tree)
-
-
-def left_side(frame):
+def left_side(frame, righframe):
     global emails_to_send, employees_id
 
     check_frame = ttk.Frame(frame)
@@ -154,7 +119,11 @@ def left_side(frame):
     send_button = ttk.Button(frame, text="Send", command=lambda: test(tree))
     send_button.grid(row=1, column=0)
     # preview button
-    preview_button = ttk.Button(frame, text="Preview", command=lambda: preview(tree))
+    preview_label = ttk.Label(righframe, text="Preview Payroll")
+    preview_label.grid()
+    preview_button = ttk.Button(
+        frame, text="Preview", command=lambda: preview(tree, preview_label)
+    )
     preview_button.grid(row=1, column=1)
 
 
@@ -170,12 +139,10 @@ def main():
     check_frame.grid(row=0, column=0, sticky=(tk.N, tk.S))
     left_frame.grid(row=0, column=1, sticky=(tk.E, tk.W, tk.N, tk.S))
     right_frame.grid(row=0, column=2, sticky=(tk.E, tk.W, tk.N, tk.S))
-    preview_label = ttk.Label(right_frame, text="Preview Payroll")
-    preview_label.grid()
 
     # display widgets
     # checkbox(check_frame)
-    left_side(left_frame)
+    left_side(left_frame, right_frame)
 
     mainframe.pack(fill=tk.BOTH, expand=True)
     mainframe.columnconfigure(1, weight=1)

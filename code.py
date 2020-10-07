@@ -98,11 +98,11 @@ def read_template(name="template.html"):
 
 
 # create payroll for a employee (get employee dict)
-def create_payroll_html(employee, template):
+def create_payroll_html(employee, template, filename="payroll.html"):
     payroll = template.substitute(employee)
-    with open("payroll.html", "w") as html_file:
+    with open(filename, "w") as html_file:
         html_file.write(payroll)
-    return "payroll.html created!"
+    return filename
 
 
 def html_to_pdf(html_filename="payroll.html", pdf_filename="payroll.pdf"):
@@ -110,14 +110,15 @@ def html_to_pdf(html_filename="payroll.html", pdf_filename="payroll.pdf"):
         "encoding": "UTF-8",
         "enable-local-file-access": "",
     }
-    pdfkit.from_file("payroll.html", "payroll.pdf", options=options)
+    pdfkit.from_file(html_filename, pdf_filename, options=options)
+    return pdf_filename
 
 
-def pdf_to_image(path, img_name="payroll.jpg"):
-    doc = fitz.open(path)
+def pdf_to_image(pdf_path, img_name="payroll.jpg"):
+    doc = fitz.open(pdf_path)
     page = doc[0]  # payroll is just one page
     pix = page.getPixmap()
-    pix.writeImage("payroll.jpg")
+    pix.writeImage(img_name)
     return pix
 
 

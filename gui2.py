@@ -3,7 +3,7 @@ from tkinter import ttk
 from tkinter import filedialog
 import fitz
 from PIL import Image, ImageTk
-import code
+import code2
 
 
 checkbuttons = []
@@ -13,20 +13,20 @@ selected_rows = []
 allitems = []
 
 
-def save_pdf():
+# def save_pdf():
 
-    filename = filedialog.asksaveasfilename(
-        defaultextension=".pdf", filetypes=(("pdf", "*.pdf"), ("All Files", "*.*"))
-    )
-    if filename != "":
-        dd = fitz.open(pdf_filename)
+#     filename = filedialog.asksaveasfilename(
+#         defaultextension=".pdf", filetypes=(("pdf", "*.pdf"), ("All Files", "*.*"))
+#     )
+#     if filename != "":
+#         dd = fitz.open(pdf_filename)
 
-        for i in dd:
-            i.insertImage(rect, filename=img_filename, rotate=rotate(direction_val))
-        dd.save(f"{filename}")
-        messagebox.showinfo("File", "file saved")
-    else:
-        messagebox.showerror("File", "choose a file!")
+#         for i in dd:
+#             i.insertImage(rect, filename=img_filename, rotate=rotate(direction_val))
+#         dd.save(f"{filename}")
+#         messagebox.showinfo("File", "file saved")
+#     else:
+#         messagebox.showerror("File", "choose a file!")
 
 
 # pdf_filename = filedialog.askopenfilename()
@@ -62,10 +62,10 @@ def test(tree):
 def checkbox(frame):
     global checkbuttons, checkvars
     # get active sheet
-    sheet = code.sheet()
+    sheet = code2.sheet()
     # list of employees
-    employees = code.employees(sheet)
-    row_nums = code.items(employees, column_name="row")
+    employees = code2.employees(sheet)
+    row_nums = code2.items(employees, column_name="row")
 
     for row in row_nums:
         var = tk.BooleanVar()
@@ -98,12 +98,12 @@ def left_side(frame):
     tree.column("row", minwidth=10, width=30)
 
     # get active sheet
-    sheet = code.sheet()
+    sheet = code2.sheet()
     # list of employees
-    employees = code.employees(sheet)
+    employees = code2.employees(sheet)
     # insert rows number
-    names = code.items(employees, column_name="name")
-    emails = code.items(employees, column_name="email")
+    names = code2.items(employees, column_name="name")
+    emails = code2.items(employees, column_name="email")
     nums = range(len(names))
     print(emails)
     print(len(emails))
@@ -121,11 +121,11 @@ def left_side(frame):
 def pdf_preview(frame):
     global allitems
     print("allitems", allitems)
-    sheet = code.sheet()
-    employee_dict = code.find_right_row(allitems, sheet)
+    sheet = code2.sheet()
+    employee_dict = code2.find_right_row(allitems, sheet)
 
     label_img = ttk.Label(frame)
-    pdfpaths = code.create_pdf(employee_dict, allitems)
+    pdfpaths = code2.create_pdf(employee_dict, allitems)
     pdfpath = pdfpaths[-1]
     doc_copy = fitz.open(pdfpath)
     page = doc_copy[0]  # first page of the pdf
