@@ -146,54 +146,58 @@ def email_connection():
     return s
 
 
-def send_mail(conn, data):
+def send_mail(conn, name, email):
     message_template = read_template("message.txt")
 
-    # For each contact, send the email:
-    for name, email in data.items():
+    if email == "None":
+        return False
 
-        if email == "None":
-            continue
+    msg = MIMEMultipart()  # create a message
 
-        msg = MIMEMultipart()  # create a message
+    # add in the actual person name to the message template
+    message = message_template.substitute(PERSON_NAME=name.title())
 
-        # add in the actual person name to the message template
-        message = message_template.substitute(PERSON_NAME=name.title())
+    # setup the parameters of the message
+    msg["From"] = config.EMAIL_HOST_USER
+    msg["To"] = email
+    msg["Subject"] = "This is TEST"
 
-        # setup the parameters of the message
-        msg["From"] = config.EMAIL_HOST_USER
-        msg["To"] = email
-        msg["Subject"] = "This is TEST"
+    # add in the message body
+    msg.attach(MIMEText(message, "plain"))
 
-        # add in the message body
-        msg.attach(MIMEText(message, "plain"))
+    # create pdf to send
+    sh = sheet()
+    emps = employees(sh)
+    emp = employee(emps, name)
+    template = read_template()
+    payroll_html = create_payroll_html(emp, template)
 
-        # create pdf to send
-        sh = sheet()
-        emps = employees(sh)
-        emp = employee(emps, name)
-        template = read_template()
-        payroll_html = create_payroll_html(emp, template)
-
-        filename = html_to_pdf(payroll_html, "payroll.pdf")
-        # Open PDF file in binary mode
-        with open(filename, "rb") as attachment:
-            part = MIMEBase("application", "octet-stream")
-            part.set_payload(attachment.read())
-        encoders.encode_base64(part)
-        # Add header as key/value pair to attachment part
-        part.add_header(
-            "Content-Disposition",
-            f"attachment; filename= {filename}",
-        )
-        msg.attach(part)
-        # send the message via the server set up earlier.
-        conn.send_message(msg)
-        del msg
-        print(f"Email sent to {email}")
-    conn.quit()
+    filename = html_to_pdf(payroll_html, "payroll.pdf")
+    # Open PDF file in binary mode
+    with open(filename, "rb") as attachment:
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(attachment.read())
+    encoders.encode_base64(part)
+    # Add header as key/value pair to attachment part
+    part.add_header(
+        "Content-Disposition",
+        f"attachment; filename= {filename}",
+    )
+    msg.attach(part)
+    # send the message via the server set up earlier.
+    # conn.send_message(msg)
+    del msg
+    return True
 
 
 if __name__ == "__main__":
-    names = ["saeid"]
-    emails = ["saeidgholami101@gmail.com"]
+    # names = ["saeid"]
+    # emails = ["saeidgholami101@gmail.com"]
+    conn = email_connection()
+    name = "سعید غلامی"
+    email = "saeidgholami101.com"
+    result = send_mail(conn, name, email)
+    if result:
+        print("Sent")
+    else:
+        print("not send")

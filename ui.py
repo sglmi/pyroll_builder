@@ -25,6 +25,23 @@ class Menubar(tk.Menu):
         pass
 
 
+class ProgressbarToplevel(tk.Toplevel):
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.pb_text = ttk.Label(self)
+        self.pb_text.pack()
+        self.progressbar_var = tk.IntVar()
+        self.progressbar = ttk.Progressbar(
+            self,
+            orient=tk.HORIZONTAL,
+            length=200,
+            maximum=100,
+            mode="determinate",
+            variable=self.progressbar_var,
+        )
+        self.progressbar.pack()
+
+
 class PreviewToplevel(tk.Toplevel):
     def __init__(self, *arg, **kwargs):
         super().__init__(*arg, **kwargs)
@@ -133,6 +150,7 @@ class EmployeeFrame(tk.Frame):
 class MainFrame(tk.Frame):
     def __init__(self, parent, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
+        self.parent = parent
         self["relief"] = "sunken"
         # Treeview
         self.employee_frame = EmployeeFrame(self)
@@ -161,6 +179,9 @@ class MainFrame(tk.Frame):
             employees_data.append(self.employee_frame.employee_tree.item(index))
         return employees_data
 
+    def progress(self, value):
+        return value
+
     def send_mail(self):
         employees = {}
         for employee in self.checked_employees():
@@ -168,8 +189,20 @@ class MainFrame(tk.Frame):
             email = employee.get("values")[2]
             employees[name] = email
 
+        number_of_emails = sum(1 for value in employees.values() if value != "None")
+        number_of_sent = 0
+        # Progressbar
+        pb_toplevel = ProgressbarToplevel(self)
         conn = code.email_connection()
-        code.send_mail(conn, employees)
+        for name, email in employees.items():
+            number_of_sent += code.send_mail(conn, name, email)
+            precent_of_sent = (number_of_sent / number_of_emails) * 100
+            text = f"{number_of_sent} / {number_of_emails}\n Send Email To {name}"
+            pb_toplevel.pb_text.config(text=text)
+            pb_toplevel.progressbar_var.set(precent_of_sent)
+            self.parent.update_idletasks()
+
+        conn.quit()
 
     def preview(self):
         emp_id = self.employee_frame.employee_tree.focus()
