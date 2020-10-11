@@ -15,7 +15,7 @@ from openpyxl import load_workbook
 import config
 
 
-def sheet(filename="small.xlsx"):
+def sheet(filename="sample.xlsx"):
     wb = load_workbook(filename, data_only=True)
     sheet = wb.active
     return sheet

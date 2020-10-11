@@ -148,20 +148,12 @@ class EmployeeFrame(tk.Frame):
         return len(self.employee_tree.employees_id)
 
 
-class MainFrame(tk.Frame):
-    def __init__(self, parent, *arg, **kwargs):
+class ActionFrame(tk.Frame):
+    def __init__(self, parent, checkframe, employee_frame, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
         self.parent = parent
-        self["relief"] = "sunken"
-        # Treeview
-        self.employee_frame = EmployeeFrame(self)
-        self.employee_frame.grid(row=0, column=1, sticky=(tk.W, tk.S, tk.N))
-
-        # Checkbuttons
-        self.checkframe = CheckFrame(self)
-        self.checkframe.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.W))
-        self.checkframe.create_checkbuttons(self.employee_frame.number_of_employees())
-
+        self.checkbuttons = checkframe
+        self.employee_frame = employee_frame
         # Actions
         self.select_all_var = tk.BooleanVar()
         ttk.Checkbutton(
@@ -175,22 +167,17 @@ class MainFrame(tk.Frame):
         )
         ttk.Button(self, text="Preview", command=self.preview).grid(row=1, column=2)
 
-        self.columnconfigure(0, weight=0)
-        self.columnconfigure(1, weight=1)
-        self.rowconfigure(0, weight=10)
-
     def checked_employees(self):
-        employees_data = []
-        for index in self.checkframe.checkeds():
-            employees_data.append(self.employee_frame.employee_tree.item(index))
-        return employees_data
+        return [
+            self.employee_frame.employee_tree.item(index)
+            for index in self.checkbuttons.checkeds()
+        ]
 
     def send_mail(self):
-        employees = {}
-        for employee in self.checked_employees():
-            name = employee.get("values")[1]
-            email = employee.get("values")[2]
-            employees[name] = email
+        employees = {
+            employee.get("values")[1]: employee.get("values")[2]
+            for employee in self.checked_employees()
+        }
 
         if employees.values():
             number_of_emails = sum(1 for value in employees.values() if value != "None")
@@ -211,7 +198,7 @@ class MainFrame(tk.Frame):
             pb_toplevel.destroy()
             conn.quit()
         else:
-            messagebox.showerror("Choice Employee", "Choice at least one employee.")
+            messagebox.showerror("Check Employee", "Choice at least one employee.")
 
     def preview(self):
         emp_id = self.employee_frame.employee_tree.focus()
@@ -219,7 +206,6 @@ class MainFrame(tk.Frame):
             toplevel = PreviewToplevel()
             emp_values = self.employee_frame.employee_tree.item(emp_id).get("values")
             emp_name = emp_values[1]
-            print(emp_id, emp_name)
             toplevel.preview(emp_name)
         else:
             messagebox.showerror(
@@ -228,13 +214,31 @@ class MainFrame(tk.Frame):
             )
 
     def select_all(self):
-        print(self.select_all_var.get())
-        if self.select_all_var.get():
-            for var in self.checkframe.checkvars:
-                var.set(True)
-        else:
-            for var in self.checkframe.checkvars:
-                var.set(False)
+        flag = self.select_all_var.get()
+        list(map(lambda x: x.set(flag), self.checkbuttons.checkvars))
+
+
+class MainFrame(tk.Frame):
+    def __init__(self, parent, *arg, **kwargs):
+        super().__init__(parent, *arg, **kwargs)
+        self.parent = parent
+        self["relief"] = "sunken"
+        # Treeview
+        self.employee_frame = EmployeeFrame(self)
+        self.employee_frame.grid(row=0, column=1, sticky=(tk.W, tk.S, tk.N))
+
+        # Checkbuttons
+        self.checkframe = CheckFrame(self)
+        self.checkframe.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.W))
+        self.checkframe.create_checkbuttons(self.employee_frame.number_of_employees())
+
+        # Actions
+        action = ActionFrame(self, self.checkframe, self.employee_frame)
+        action.grid(row=1, column=0, columnspan=2)
+
+        self.columnconfigure(0, weight=0)
+        self.columnconfigure(1, weight=1)
+        self.rowconfigure(0, weight=10)
 
 
 def main():
