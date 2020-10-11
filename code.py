@@ -1,11 +1,21 @@
+# Built-in packages
+import smtplib
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from string import Template
 
+# External Packages
 import fitz
 import pdfkit
 from openpyxl import load_workbook
 
+# Project Modules
+import config
 
-def sheet(filename="sample.xlsx"):
+
+def sheet(filename="small.xlsx"):
     wb = load_workbook(filename, data_only=True)
     sheet = wb.active
     return sheet
@@ -86,13 +96,13 @@ def employee(employees, name=None):
 
 # cols: row, name, email
 def items(employees, column_name="name"):
-    columns = {"row": 0, "name": 1, "email": 20}
+    columns = {"row": 0, "name": 1, "email": 30}
     index = columns.get(column_name)
     return [employee[index].value for employee in employees]
 
 
-def read_template(name="template.html"):
-    with open("template.html", "r") as template_file:
+def read_template(filename="template.html"):
+    with open(filename, "r") as template_file:
         template = Template(template_file.read())
     return template
 
@@ -123,20 +133,63 @@ def pdf_to_image(pdf_path, img_name="payroll.jpg"):
 
 
 def get_image_bytes(pix):
-    pix1 = (
-        fitz.Pixmap(pix, 0) if pix.alpha else pix
-    )  # PPM does not support transparency
-    imgdata = pix1.getImageData("ppm")  # extremely fast!
+    pix = fitz.Pixmap(pix, 0) if pix.alpha else pix  # PPM does not support transparency
+    imgdata = pix.getImageData("ppm")  # extremely fast!
     return imgdata
 
 
-def main():
-    sh = sheet()
-    emps = employees(sh)
-    # x = employee(emps, "john")
+def send_mail(names, emails):
+    # names, emails = get_contacts("mycontacts.txt")  # read contacts
+    message_template = read_template("message.txt")
+    # print(message_template.substitute(PERSONE))
+
+    # # set up the SMTP server
+    s = smtplib.SMTP(host=config.EMAIL_HOST, port=config.EMAIL_PORT)
+    s.starttls()
+    s.login(config.EMAIL_HOST_USER, config.EMAIL_HOST_PASSWORD)
+
+    # For each contact, send the email:
+    for name, email in zip(names, emails):
+        msg = MIMEMultipart()  # create a message
+
+        # add in the actual person name to the message template
+        message = message_template.substitute(PERSON_NAME=name.title())
+
+        # setup the parameters of the message
+        msg["From"] = config.EMAIL_HOST_USER
+        msg["To"] = email
+        msg["Subject"] = "This is TEST"
+
+        # add in the message body
+        msg.attach(MIMEText(message, "plain"))
+
+        # create pdf to send
+        sh = sheet()
+        emps = employees(sh)
+        emp = employee(emps, name)
+        print(emps)
+        template = read_template()
+        payroll_html = create_payroll_html(emp, template)
+        filename = html_to_pdf(payroll_html, "payroll.pdf")
+        # Open PDF file in binary mode
+        with open(filename, "rb") as attachment:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(attachment.read())
+        encoders.encode_base64(part)
+        # Add header as key/value pair to attachment part
+        part.add_header(
+            "Content-Disposition",
+            f"attachment; filename= {filename}",
+        )
+        msg.attach(part)
+        # send the message via the server set up earlier.
+        s.send_message(msg)
+        del msg
+        print(f"Email sent to {name}")
+    s.quit()
 
 
 if __name__ == "__main__":
-    sh = sheet()
-    emps = employees(sh)
-    # x = employee(emps, "john")
+    names = ["saeid"]
+    emails = ["saeidgholami101@gmail.com"]
+    send_mail(names, emails)
