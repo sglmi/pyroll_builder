@@ -146,7 +146,9 @@ class MainFrame(tk.Frame):
         # Actions
         self.select_all = tk.BooleanVar()
         ttk.Checkbutton(self, text="Select All", variable=self.select_all).grid(row=1)
-        ttk.Button(self, text="Send Email").grid(row=1, column=1)
+        ttk.Button(self, text="Send Email", command=self.send_mail).grid(
+            row=1, column=1
+        )
         ttk.Button(self, text="Preview", command=self.preview).grid(row=1, column=2)
 
         self.columnconfigure(0, weight=0)
@@ -159,11 +161,17 @@ class MainFrame(tk.Frame):
             employees_data.append(self.employee_frame.employee_tree.item(index))
         return employees_data
 
-    def test(self):
-        print(self.checked_employees())
+    def send_mail(self):
+        employees = {}
+        for employee in self.checked_employees():
+            name = employee.get("values")[1]
+            email = employee.get("values")[2]
+            employees[name] = email
+
+        conn = code.email_connection()
+        code.send_mail(conn, employees)
 
     def preview(self):
-
         emp_id = self.employee_frame.employee_tree.focus()
         if emp_id != "":
             toplevel = PreviewToplevel()

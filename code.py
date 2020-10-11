@@ -138,18 +138,23 @@ def get_image_bytes(pix):
     return imgdata
 
 
-def send_mail(names, emails):
-    # names, emails = get_contacts("mycontacts.txt")  # read contacts
-    message_template = read_template("message.txt")
-    # print(message_template.substitute(PERSONE))
-
+def email_connection():
     # # set up the SMTP server
     s = smtplib.SMTP(host=config.EMAIL_HOST, port=config.EMAIL_PORT)
     s.starttls()
     s.login(config.EMAIL_HOST_USER, config.EMAIL_HOST_PASSWORD)
+    return s
+
+
+def send_mail(conn, data):
+    message_template = read_template("message.txt")
 
     # For each contact, send the email:
-    for name, email in zip(names, emails):
+    for name, email in data.items():
+
+        if email == "None":
+            continue
+
         msg = MIMEMultipart()  # create a message
 
         # add in the actual person name to the message template
@@ -167,9 +172,9 @@ def send_mail(names, emails):
         sh = sheet()
         emps = employees(sh)
         emp = employee(emps, name)
-        print(emps)
         template = read_template()
         payroll_html = create_payroll_html(emp, template)
+
         filename = html_to_pdf(payroll_html, "payroll.pdf")
         # Open PDF file in binary mode
         with open(filename, "rb") as attachment:
@@ -183,13 +188,12 @@ def send_mail(names, emails):
         )
         msg.attach(part)
         # send the message via the server set up earlier.
-        s.send_message(msg)
+        conn.send_message(msg)
         del msg
-        print(f"Email sent to {name}")
-    s.quit()
+        print(f"Email sent to {email}")
+    conn.quit()
 
 
 if __name__ == "__main__":
     names = ["saeid"]
     emails = ["saeidgholami101@gmail.com"]
-    send_mail(names, emails)
