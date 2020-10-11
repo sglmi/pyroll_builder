@@ -2,28 +2,58 @@ import code
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import filedialog
 import time
 
 
-class Menubar(tk.Menu):
-    def __init__(self, parent, *arg, **kwargs):
+class Navebar(ttk.Frame):
+    def __init__(self, parent, mainframe, *arg, **kwargs):
         super().__init__(parent, *arg, *kwargs)
+        self.parent = parent
+        self.mainframe = mainframe
+        self.filename = "small.xlsx"
+        menubar = tk.Menu()
         # File
-        filemenu = tk.Menu(self, tearoff=0)
+        filemenu = tk.Menu(menubar, tearoff=0)
         filemenu.add_command(label="Open", command=self.openfile)
         filemenu.add_command(label="Save As", command=self.save_as)
-        self.add_cascade(label="File", menu=filemenu)
+        menubar.add_cascade(label="File", menu=filemenu)
         # Help
-        helpmenu = tk.Menu(self, tearoff=0)
+        helpmenu = tk.Menu(menubar, tearoff=0)
         helpmenu.add_command(label="Help")
         helpmenu.add_command(label="About")
-        self.add_cascade(label="Help", menu=helpmenu)
+        menubar.add_cascade(label="Help", menu=helpmenu)
+        self.parent.config(menu=menubar)
 
     def openfile(self):
-        pass
+        self.filename = filedialog.askopenfilename(
+            filetypes=(
+                ("Excel File", "*.xlsx"),
+                ("Excel File (old)", "xls"),
+                ("All files", "*.*"),
+            )
+        )
+        if self.filename:
+            self.mainframe.destroy()
+            self.mainframe = MainFrame(self.parent, self.filename)
+            self.mainframe.grid(row=0, column=0, sticky=(tk.N, tk.E, tk.S, tk.W))
+        else:
+            self.filename = "small.xlsx"
 
     def save_as(self):
-        pass
+        names = []
+        data = self.mainframe.action.checked_employees()
+        for employee in data:
+            name = employee.get("values")[1]
+            names.append(name)
+        sheet = code.sheet(self.filename)
+        employees = code.employees(sheet)
+        template = code.read_template()
+        for name in names:
+            emp = code.employee(employees, name)
+            html = code.create_payroll_html(emp, template)
+            pdf = code.html_to_pdf(html, f"{name}.pdf")
+            print(f"Pdf file created for {pdf}")
 
 
 class ProgressbarToplevel(tk.Toplevel):
@@ -69,7 +99,7 @@ class PreviewToplevel(tk.Toplevel):
 
 
 class EmployeeTree(ttk.Treeview):
-    def __init__(self, parent, *arg, **kwargs):
+    def __init__(self, parent, filename, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -77,7 +107,7 @@ class EmployeeTree(ttk.Treeview):
         self._config()
         self._headings()
         self._scrollbar(parent)
-        self._populate_data()
+        self._populate_data(filename)
 
     def _config(self):
         self.configure(
@@ -96,8 +126,8 @@ class EmployeeTree(ttk.Treeview):
         scrollbar.grid(row=0, column=1, sticky="esn")
         self.configure(yscrollcommand=scrollbar.set)
 
-    def _populate_data(self):
-        sheet = code.sheet()
+    def _populate_data(self, filename):
+        sheet = code.sheet(filename)
         employees = code.employees(sheet)
         names = code.items(employees, column_name="name")
         emails = code.items(employees, column_name="email")
@@ -137,15 +167,15 @@ class CheckFrame(tk.Frame):
 
 
 class EmployeeFrame(tk.Frame):
-    def __init__(self, parent, *arg, **kwargs):
+    def __init__(self, parent, filename, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
-        self.employee_tree = EmployeeTree(self)
-        self.employee_tree.grid(row=0, column=0)
+        self.tree = EmployeeTree(self, filename)
+        self.tree.grid(row=0, column=0)
         # self.columnconfigure(0, weight=1)
         # self.rowconfigure(0, weight=1)
 
     def number_of_employees(self):
-        return len(self.employee_tree.employees_id)
+        return len(self.tree.employees_id)
 
 
 class ActionFrame(tk.Frame):
@@ -169,7 +199,7 @@ class ActionFrame(tk.Frame):
 
     def checked_employees(self):
         return [
-            self.employee_frame.employee_tree.item(index)
+            self.employee_frame.tree.item(index)
             for index in self.checkbuttons.checkeds()
         ]
 
@@ -201,17 +231,16 @@ class ActionFrame(tk.Frame):
             messagebox.showerror("Check Employee", "Choice at least one employee.")
 
     def preview(self):
-        emp_id = self.employee_frame.employee_tree.focus()
+        emp_id = self.employee_frame.tree.focus()
         if emp_id != "":
             toplevel = PreviewToplevel()
-            emp_values = self.employee_frame.employee_tree.item(emp_id).get("values")
-            emp_name = emp_values[1]
+            emp_name = self.employee_frame.tree.item(emp_id).get("values")[1]
             toplevel.preview(emp_name)
-        else:
-            messagebox.showerror(
-                "Not Selected an Employee",
-                "Select one employee to preview the payroll.",
-            )
+            return True
+        messagebox.showerror(
+            "Not Selected an Employee",
+            "Select one employee to preview the payroll.",
+        )
 
     def select_all(self):
         flag = self.select_all_var.get()
@@ -219,22 +248,21 @@ class ActionFrame(tk.Frame):
 
 
 class MainFrame(tk.Frame):
-    def __init__(self, parent, *arg, **kwargs):
+    def __init__(self, parent, filename, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
         self.parent = parent
-        self["relief"] = "sunken"
         # Treeview
-        self.employee_frame = EmployeeFrame(self)
-        self.employee_frame.grid(row=0, column=1, sticky=(tk.W, tk.S, tk.N))
+        self.employee = EmployeeFrame(self, filename)
+        self.employee.grid(row=0, column=1, sticky=(tk.W, tk.S, tk.N))
 
         # Checkbuttons
-        self.checkframe = CheckFrame(self)
-        self.checkframe.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.W))
-        self.checkframe.create_checkbuttons(self.employee_frame.number_of_employees())
+        self.checkbuttons = CheckFrame(self)
+        self.checkbuttons.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.W))
+        self.checkbuttons.create_checkbuttons(self.employee.number_of_employees())
 
         # Actions
-        action = ActionFrame(self, self.checkframe, self.employee_frame)
-        action.grid(row=1, column=0, columnspan=2)
+        self.action = ActionFrame(self, self.checkbuttons, self.employee)
+        self.action.grid(row=1, column=0, columnspan=2)
 
         self.columnconfigure(0, weight=0)
         self.columnconfigure(1, weight=1)
@@ -245,10 +273,11 @@ def main():
     root = tk.Tk()
     root.title("Payroll")
     # ++++++++++++++++++
-    menubar = Menubar(root)
-    mainframe = MainFrame(root)
+    mainframe = MainFrame(root, "small.xlsx")
     mainframe.grid(row=0, column=0, sticky=(tk.N, tk.E, tk.S, tk.W))
-    root.config(menu=menubar)
+    menubar = Navebar(root, mainframe)
+    menubar.grid(row=0, column=0)
+
     root.columnconfigure(0, weight=1)
     root.rowconfigure(0, weight=1)
     # ++++++++++++++++++
