@@ -173,6 +173,8 @@ def main():
     mainframe.columnconfigure(0, weight=1)
     mainframe.columnconfigure(1, weight=10)
     mainframe.rowconfigure(0, weight=1)
+    root.rowconfigure(0, weight=1)
+    root.columnconfigure(0, weight=1)
 
     for child in mainframe.winfo_children():
         child.grid_configure(padx=5, pady=5)

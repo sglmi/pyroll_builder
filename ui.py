@@ -1,10 +1,7 @@
+import code
 import tkinter as tk
 from tkinter import ttk
-import code
-
-
-class Preview(tk.Toplevel):
-    pass
+from tkinter import messagebox
 
 
 class Menubar(tk.Menu):
@@ -28,9 +25,36 @@ class Menubar(tk.Menu):
         pass
 
 
+class PreviewToplevel(tk.Toplevel):
+    def __init__(self, *arg, **kwargs):
+        super().__init__(*arg, **kwargs)
+        sheet = code.sheet()
+        self.employees = code.employees(sheet)
+        self.label = ttk.Label(self)
+
+    def payroll_image(self, name):
+        employee = code.employee(self.employees, name)
+        template = code.read_template()
+        payroll_html = code.create_payroll_html(employee, template)
+        payroll_pdf = code.html_to_pdf(payroll_html, "payroll.pdf")
+        pix = code.pdf_to_image(payroll_pdf)
+        return pix
+
+    def preview(self, name):
+        # preview in tkinter
+        pix = self.payroll_image(name)
+        imgdata = code.get_image_bytes(pix)
+        tkimg = tk.PhotoImage(data=imgdata)
+        self.label.img = tkimg
+        self.label.config(image=self.label.img)
+        self.label.pack()
+
+
 class EmployeeTree(ttk.Treeview):
     def __init__(self, parent, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
         self.employees_id = []
         self._config()
         self._headings()
@@ -74,6 +98,8 @@ class CheckFrame(tk.Frame):
     def __init__(self, parent, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
         self.checkvars = []
+        # self.columnconfigure(0, weight=1)
+        # self.rowconfigure(0, weight=1)
 
     def create_checkbuttons(self, number):
         r = 0
@@ -97,6 +123,8 @@ class EmployeeFrame(tk.Frame):
         super().__init__(parent, *arg, **kwargs)
         self.employee_tree = EmployeeTree(self)
         self.employee_tree.grid(row=0, column=0)
+        # self.columnconfigure(0, weight=1)
+        # self.rowconfigure(0, weight=1)
 
     def number_of_employees(self):
         return len(self.employee_tree.employees_id)
@@ -105,15 +133,25 @@ class EmployeeFrame(tk.Frame):
 class MainFrame(tk.Frame):
     def __init__(self, parent, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
+        self["relief"] = "sunken"
+        # Treeview
         self.employee_frame = EmployeeFrame(self)
-        self.employee_frame.grid(row=0, column=1)
-        # get employee number
+        self.employee_frame.grid(row=0, column=1, sticky=(tk.W, tk.S, tk.N))
 
+        # Checkbuttons
         self.checkframe = CheckFrame(self)
-        self.checkframe.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.E))
+        self.checkframe.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.W))
         self.checkframe.create_checkbuttons(self.employee_frame.number_of_employees())
 
-        ttk.Button(self, text="Test", command=self.test).grid(row=1, column=0)
+        # Actions
+        self.select_all = tk.BooleanVar()
+        ttk.Checkbutton(self, text="Select All", variable=self.select_all).grid(row=1)
+        ttk.Button(self, text="Send Email").grid(row=1, column=1)
+        ttk.Button(self, text="Preview", command=self.preview).grid(row=1, column=2)
+
+        self.columnconfigure(0, weight=0)
+        self.columnconfigure(1, weight=1)
+        self.rowconfigure(0, weight=10)
 
     def checked_employees(self):
         employees_data = []
@@ -124,6 +162,21 @@ class MainFrame(tk.Frame):
     def test(self):
         print(self.checked_employees())
 
+    def preview(self):
+
+        emp_id = self.employee_frame.employee_tree.focus()
+        if emp_id != "":
+            toplevel = PreviewToplevel()
+            emp_values = self.employee_frame.employee_tree.item(emp_id).get("values")
+            emp_name = emp_values[1]
+            print(emp_id, emp_name)
+            toplevel.preview(emp_name)
+        else:
+            messagebox.showerror(
+                "Not Selected an Employee",
+                "Select one employee to preview the payroll.",
+            )
+
 
 def main():
     root = tk.Tk()
@@ -131,8 +184,10 @@ def main():
     # ++++++++++++++++++
     menubar = Menubar(root)
     mainframe = MainFrame(root)
-    mainframe.grid(row=0, column=0)
+    mainframe.grid(row=0, column=0, sticky=(tk.N, tk.E, tk.S, tk.W))
     root.config(menu=menubar)
+    root.columnconfigure(0, weight=1)
+    root.rowconfigure(0, weight=1)
     # ++++++++++++++++++
     root.mainloop()
 
