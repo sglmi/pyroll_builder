@@ -2,6 +2,7 @@ import code
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import time
 
 
 class Menubar(tk.Menu):
@@ -162,8 +163,13 @@ class MainFrame(tk.Frame):
         self.checkframe.create_checkbuttons(self.employee_frame.number_of_employees())
 
         # Actions
-        self.select_all = tk.BooleanVar()
-        ttk.Checkbutton(self, text="Select All", variable=self.select_all).grid(row=1)
+        self.select_all_var = tk.BooleanVar()
+        ttk.Checkbutton(
+            self,
+            text="Select All",
+            variable=self.select_all_var,
+            command=self.select_all,
+        ).grid(row=1)
         ttk.Button(self, text="Send Email", command=self.send_mail).grid(
             row=1, column=1
         )
@@ -179,9 +185,6 @@ class MainFrame(tk.Frame):
             employees_data.append(self.employee_frame.employee_tree.item(index))
         return employees_data
 
-    def progress(self, value):
-        return value
-
     def send_mail(self):
         employees = {}
         for employee in self.checked_employees():
@@ -189,20 +192,26 @@ class MainFrame(tk.Frame):
             email = employee.get("values")[2]
             employees[name] = email
 
-        number_of_emails = sum(1 for value in employees.values() if value != "None")
-        number_of_sent = 0
-        # Progressbar
-        pb_toplevel = ProgressbarToplevel(self)
-        conn = code.email_connection()
-        for name, email in employees.items():
-            number_of_sent += code.send_mail(conn, name, email)
-            precent_of_sent = (number_of_sent / number_of_emails) * 100
-            text = f"{number_of_sent} / {number_of_emails}\n Send Email To {name}"
-            pb_toplevel.pb_text.config(text=text)
-            pb_toplevel.progressbar_var.set(precent_of_sent)
-            self.parent.update_idletasks()
+        if employees.values():
+            number_of_emails = sum(1 for value in employees.values() if value != "None")
+            number_of_sent = 0
+            # Progressbar
+            pb_toplevel = ProgressbarToplevel(self)
 
-        conn.quit()
+            conn = code.email_connection()
+            for name, email in employees.items():
+                number_of_sent += code.send_mail(conn, name, email)
+                precent_of_sent = (number_of_sent / number_of_emails) * 100
+                text = f"{number_of_sent} / {number_of_emails}\n Send Email To {name}"
+                pb_toplevel.pb_text.config(text=text)
+                pb_toplevel.progressbar_var.set(precent_of_sent)
+                self.parent.update_idletasks()
+            # destroy pb toplevel
+            time.sleep(2)
+            pb_toplevel.destroy()
+            conn.quit()
+        else:
+            messagebox.showerror("Choice Employee", "Choice at least one employee.")
 
     def preview(self):
         emp_id = self.employee_frame.employee_tree.focus()
@@ -217,6 +226,15 @@ class MainFrame(tk.Frame):
                 "Not Selected an Employee",
                 "Select one employee to preview the payroll.",
             )
+
+    def select_all(self):
+        print(self.select_all_var.get())
+        if self.select_all_var.get():
+            for var in self.checkframe.checkvars:
+                var.set(True)
+        else:
+            for var in self.checkframe.checkvars:
+                var.set(False)
 
 
 def main():
