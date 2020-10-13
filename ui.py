@@ -11,7 +11,7 @@ class Navebar(ttk.Frame):
         super().__init__(parent, *arg, *kwargs)
         self.parent = parent
         self.mainframe = mainframe
-        self.filename = "small.xlsx"
+        self.filename = ""
         menubar = tk.Menu()
         # File
         filemenu = tk.Menu(menubar, tearoff=0)
@@ -41,19 +41,20 @@ class Navebar(ttk.Frame):
             self.filename = "small.xlsx"
 
     def save_as(self):
-        names = []
+
         data = self.mainframe.action.checked_employees()
-        for employee in data:
-            name = employee.get("values")[1]
-            names.append(name)
+
         sheet = code.sheet(self.filename)
         employees = code.employees(sheet)
         template = code.read_template()
-        for name in names:
+        for item in data:
+            name = item.get("values")[1]
+            row = item.get("values")[0]
             emp = code.employee(employees, name)
             html = code.create_payroll_html(emp, template)
-            pdf = code.html_to_pdf(html, f"{name}.pdf")
+            pdf = code.html_to_pdf(html, f"{row}.pdf")
             print(f"Pdf file created for {pdf}")
+            # print(name, row, item)
 
 
 class ProgressbarToplevel(tk.Toplevel):
@@ -74,9 +75,9 @@ class ProgressbarToplevel(tk.Toplevel):
 
 
 class PreviewToplevel(tk.Toplevel):
-    def __init__(self, *arg, **kwargs):
+    def __init__(self, filename, *arg, **kwargs):
         super().__init__(*arg, **kwargs)
-        sheet = code.sheet()
+        sheet = code.sheet(filename)
         self.employees = code.employees(sheet)
         self.label = ttk.Label(self)
 
@@ -179,11 +180,12 @@ class EmployeeFrame(tk.Frame):
 
 
 class ActionFrame(tk.Frame):
-    def __init__(self, parent, checkframe, employee_frame, *arg, **kwargs):
+    def __init__(self, parent, checkframe, employee_frame, filename, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
         self.parent = parent
         self.checkbuttons = checkframe
         self.employee_frame = employee_frame
+        self.filename = filename
         # Actions
         self.select_all_var = tk.BooleanVar()
         ttk.Checkbutton(
@@ -214,10 +216,10 @@ class ActionFrame(tk.Frame):
             number_of_sent = 0
             # Progressbar
             pb_toplevel = ProgressbarToplevel(self)
-
+            filename = self.parent.filename
             conn = code.email_connection()
             for name, email in employees.items():
-                number_of_sent += code.send_mail(conn, name, email)
+                number_of_sent += code.send_mail(conn, filename, name, email)
                 precent_of_sent = (number_of_sent / number_of_emails) * 100
                 text = f"{number_of_sent} / {number_of_emails}\n Send Email To {name}"
                 pb_toplevel.pb_text.config(text=text)
@@ -233,7 +235,7 @@ class ActionFrame(tk.Frame):
     def preview(self):
         emp_id = self.employee_frame.tree.focus()
         if emp_id != "":
-            toplevel = PreviewToplevel()
+            toplevel = PreviewToplevel(self.filename)
             emp_name = self.employee_frame.tree.item(emp_id).get("values")[1]
             toplevel.preview(emp_name)
             return True
@@ -251,6 +253,7 @@ class MainFrame(tk.Frame):
     def __init__(self, parent, filename, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
         self.parent = parent
+        self.filename = filename
         # Treeview
         self.employee = EmployeeFrame(self, filename)
         self.employee.grid(row=0, column=1, sticky=(tk.W, tk.S, tk.N))
@@ -261,7 +264,7 @@ class MainFrame(tk.Frame):
         self.checkbuttons.create_checkbuttons(self.employee.number_of_employees())
 
         # Actions
-        self.action = ActionFrame(self, self.checkbuttons, self.employee)
+        self.action = ActionFrame(self, self.checkbuttons, self.employee, self.filename)
         self.action.grid(row=1, column=0, columnspan=2)
 
         self.columnconfigure(0, weight=0)
@@ -273,7 +276,8 @@ def main():
     root = tk.Tk()
     root.title("Payroll")
     # ++++++++++++++++++
-    mainframe = MainFrame(root, "small.xlsx")
+    default_excel_filename = "sample.xlsx"
+    mainframe = MainFrame(root, default_excel_filename)
     mainframe.grid(row=0, column=0, sticky=(tk.N, tk.E, tk.S, tk.W))
     menubar = Navebar(root, mainframe)
     menubar.grid(row=0, column=0)

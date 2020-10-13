@@ -15,7 +15,7 @@ from openpyxl import load_workbook
 import config
 
 
-def sheet(filename="sample.xlsx"):
+def sheet(filename):
     wb = load_workbook(filename, data_only=True)
     sheet = wb.active
     return sheet
@@ -102,7 +102,7 @@ def items(employees, column_name="name"):
 
 
 def read_template(filename="template.html"):
-    with open(filename, "r") as template_file:
+    with open(filename, "r", encoding="utf-8") as template_file:
         template = Template(template_file.read())
     return template
 
@@ -110,7 +110,7 @@ def read_template(filename="template.html"):
 # create payroll for a employee (get employee dict)
 def create_payroll_html(employee, template, filename="payroll.html"):
     payroll = template.substitute(employee)
-    with open(filename, "w") as html_file:
+    with open(filename, "w", encoding="utf-8") as html_file:
         html_file.write(payroll)
     return filename
 
@@ -120,7 +120,12 @@ def html_to_pdf(html_filename="payroll.html", pdf_filename="payroll.pdf"):
         "encoding": "UTF-8",
         "enable-local-file-access": "",
     }
-    pdfkit.from_file(html_filename, pdf_filename, options=options)
+    wk_path = pdfkit.configuration(
+        wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+    )
+    pdfkit.from_file(
+        html_filename, pdf_filename, options=options, configuration=wk_path
+    )
     return pdf_filename
 
 
@@ -146,7 +151,7 @@ def email_connection():
     return s
 
 
-def send_mail(conn, name, email):
+def send_mail(conn, filename, name, email):
     message_template = read_template("message.txt")
 
     if email == "None":
