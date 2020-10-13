@@ -171,7 +171,7 @@ def send_mail(conn, filename, name, email):
     msg.attach(MIMEText(message, "plain"))
 
     # create pdf to send
-    sh = sheet()
+    sh = sheet(filename)
     emps = employees(sh)
     emp = employee(emps, name)
     template = read_template()
@@ -201,7 +201,8 @@ if __name__ == "__main__":
     conn = email_connection()
     name = "سعید غلامی"
     email = "saeidgholami101.com"
-    result = send_mail(conn, name, email)
+    # result = send_mail(conn, name, email)
+    result = ""
     if result:
         print("Sent")
     else:

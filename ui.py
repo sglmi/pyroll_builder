@@ -102,12 +102,10 @@ class PreviewToplevel(tk.Toplevel):
 class EmployeeTree(ttk.Treeview):
     def __init__(self, parent, filename, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
         self.employees_id = []
         self._config()
         self._headings()
-        self._scrollbar(parent)
+        # self._scrollbar(parent)
         self._populate_data(filename)
 
     def _config(self):
@@ -147,8 +145,6 @@ class CheckFrame(tk.Frame):
     def __init__(self, parent, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
         self.checkvars = []
-        # self.columnconfigure(0, weight=1)
-        # self.rowconfigure(0, weight=1)
 
     def create_checkbuttons(self, number):
         r = 0
@@ -171,9 +167,7 @@ class EmployeeFrame(tk.Frame):
     def __init__(self, parent, filename, *arg, **kwargs):
         super().__init__(parent, *arg, **kwargs)
         self.tree = EmployeeTree(self, filename)
-        self.tree.grid(row=0, column=0)
-        # self.columnconfigure(0, weight=1)
-        # self.rowconfigure(0, weight=1)
+        self.tree.pack(fill="both", expand=True)
 
     def number_of_employees(self):
         return len(self.tree.employees_id)
@@ -254,22 +248,29 @@ class MainFrame(tk.Frame):
         super().__init__(parent, *arg, **kwargs)
         self.parent = parent
         self.filename = filename
-        # Treeview
-        self.employee = EmployeeFrame(self, filename)
-        self.employee.grid(row=0, column=1, sticky=(tk.W, tk.S, tk.N))
+        self.canvas = tk.Canvas(
+            self,
+        )
+        scrollbar = ttk.Scrollbar(
+            self.canvas, orient="vertical", command=self.canvas.yview
+        )
+        scrollbar.grid(row=0, column=2, sticky="sn")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Employee Frame
+        self.employee = EmployeeFrame(self.canvas, filename)
 
         # Checkbuttons
-        self.checkbuttons = CheckFrame(self)
-        self.checkbuttons.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.W))
+        self.checkbuttons = CheckFrame(self.canvas)
         self.checkbuttons.create_checkbuttons(self.employee.number_of_employees())
 
         # Actions
         self.action = ActionFrame(self, self.checkbuttons, self.employee, self.filename)
-        self.action.grid(row=1, column=0, columnspan=2)
 
-        self.columnconfigure(0, weight=0)
-        self.columnconfigure(1, weight=1)
-        self.rowconfigure(0, weight=10)
+        # self.canvas.create_window(10, 35, anchor="nw", window=self.checkbuttons)
+        self.canvas.create_window(40, 10, anchor="nw", window=self.employee)
+        self.employee.grid()
+        self.canvas.grid(row=0, column=1, sticky="snew")
 
 
 def main():
