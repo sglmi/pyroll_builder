@@ -120,12 +120,11 @@ def html_to_pdf(html_filename="payroll.html", pdf_filename="payroll.pdf"):
         "encoding": "UTF-8",
         "enable-local-file-access": "",
     }
-    wk_path = pdfkit.configuration(
-        wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
-    )
-    pdfkit.from_file(
-        html_filename, pdf_filename, options=options, configuration=wk_path
-    )
+    # wk_path = pdfkit.configuration(
+    #     wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+    # )
+    # configuration=wk_path
+    pdfkit.from_file(html_filename, pdf_filename, options=options)
     return pdf_filename
 
 
@@ -154,7 +153,7 @@ def email_connection():
 def send_mail(conn, filename, name, email):
     message_template = read_template("message.txt")
 
-    if email == "None":
+    if email is None:
         return False
 
     msg = MIMEMultipart()  # create a message
@@ -190,7 +189,7 @@ def send_mail(conn, filename, name, email):
     )
     msg.attach(part)
     # send the message via the server set up earlier.
-    # conn.send_message(msg)
+    conn.send_message(msg)
     del msg
     return True
 
