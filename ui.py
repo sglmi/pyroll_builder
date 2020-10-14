@@ -4,6 +4,7 @@ from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
 from ttkwidgets import CheckboxTreeview
+import time
 
 
 class Navebar(tk.Menu):
@@ -11,10 +12,14 @@ class Navebar(tk.Menu):
         super().__init__(parent, *arg, *kwargs)
         self.parent = parent
         self.mainframe = mainframe
+        self.checkall_var = tk.BooleanVar(False)
         # File
         filemenu = tk.Menu(self, tearoff=0)
         filemenu.add_command(label="Open", command=self.openfile)
         filemenu.add_command(label="Save As", command=self.saveas)
+        filemenu.add_checkbutton(
+            label="Check All", variable=self.checkall_var, command=self.checkall
+        )
         self.add_cascade(label="File", menu=filemenu)
         # Help
         payrollmenu = tk.Menu(self, tearoff=0)
@@ -66,37 +71,75 @@ class Navebar(tk.Menu):
             pdf = code.html_to_pdf(html, f"{directory}/{name}.pdf")
             print(f"pdf created successfuly {pdf}")
 
+    def checkall(self):
+        eids = [employee.get("id") for employee in self.mainframe.table.employees]
+        if self.checkall_var.get():
+            for eid in eids:
+                self.mainframe.table.tree.change_state(eid, "checked")
+        else:
+            for eid in eids:
+                self.mainframe.table.tree.change_state(eid, "unchecked")
+
     def sendmail(self):
-        focus = self.mainframe.table.tree.focus()
-        print(focus)
+        if not self.mainframe.table.tree.get_checked():
+            messagebox.showerror(
+                "Not Selected Email", "Check one or more employee to send mail"
+            )
+            return
+        names = []
+        emails = []
+        for employee in self.mainframe.table.employees:
+            eid, name, email = employee.values()
+            for item_id in self.mainframe.table.tree.get_checked():
+                if item_id == eid:
+                    names.append(name)
+                    emails.append(email)
 
-        # es_id = self.mainframe.employee_table.checkeds()
-        # names, emails = self.mainframe.employee.extract_name_email(es_id)
-        # conn = code.email_connection()
-        # filename = self.mainframe.filename
-        # for name, email in zip(names, emails):
-        #     code.send_mail(conn, filename, name, email)
-        #     print("email send to ", email, "successfuly.")
-        pass
+        number_of_emails = sum(1 for email in emails if email is not None)
+        number_of_sent = 0
+        conn = code.email_connection()
+        filename = self.mainframe.filename
+        statusbar = self.mainframe.statusbar.create_progressbar()
+        for name, email in zip(names, emails):
+            number_of_sent += code.send_mail(conn, filename, name, email)
+            precent_of_sent = (number_of_sent / number_of_emails) * 100
+            text = f"{number_of_sent} / {number_of_emails} Sending Email To {name}"
+            # Progressbar
+            statusbar.update_status(precent_of_sent, text)
+            self.parent.update_idletasks()
 
-    def preview(self, eid=1):
-        # window = tk.Toplevel(self.parent)
-        # window.title("Payroll")
-        # self.label = ttk.Label(window)
-        # name = self.mainframe.employee.extract_name(eid)
-        # sheet = code.sheet(self.mainframe.filename)
-        # emps = code.employees(sheet)
-        # emp = code.employee(emps, name)
-        # tmp = code.read_template()
-        # html = code.create_payroll_html(emp, tmp)
-        # pdf = code.html_to_pdf(html, "payroll.pdf")
-        # pix = code.pdf_to_image(pdf)
-        # imgdata = code.get_image_bytes(pix)
-        # tkimg = tk.PhotoImage(data=imgdata)
-        # self.label.img = tkimg
-        # self.label.config(image=self.label.img)
-        # self.label.pack()
-        pass
+            time.sleep(3)
+        statusbar.update_text("All emails sent successfuly.")
+        statusbar.pb.destroy()
+        conn.quit()
+
+    def preview(self):
+        item = self.mainframe.table.tree.focus()
+        if item == "":  # no item selected
+            messagebox.showinfo(
+                "Select an Employee", "Select an employee to show payroll."
+            )
+            return
+
+        window = tk.Toplevel(self.parent)
+        window.title("Payroll")
+        self.label = ttk.Label(window)
+        for employee in self.mainframe.table.employees:
+            eid, name, _ = employee.values()
+            if eid == str(item):
+                break
+        sheet = code.sheet(self.mainframe.filename)
+        emps = code.employees(sheet)
+        emp = code.employee(emps, name)
+        tmp = code.read_template()
+        html = code.template_to_html(emp, tmp)
+        pdf = code.html_to_pdf(html, "payroll.pdf")
+        pix = code.pdf_to_image(pdf)
+        imgdata = code.get_image_bytes(pix)
+        tkimg = tk.PhotoImage(data=imgdata)
+        self.label.img = tkimg
+        self.label.config(image=self.label.img)
+        self.label.pack()
 
 
 class EmployeeTable(ttk.Frame):
@@ -159,9 +202,37 @@ class EmployeeTable(ttk.Frame):
         # populate row num, names and emails on mployee Tree
         for i, name, email in zip(ids, names, emails):
             self.tree.insert("", "end", iid=i, values=(i + 1, name, email))
-
             employee = {"id": str(i), "name": name, "email": email}
             self.employees.append(employee)
+
+
+class Statusbar(ttk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
+        self.text_var = tk.StringVar()
+        self.pb_var = tk.IntVar()
+        self.pb_text = ttk.Label(self, textvariable=self.text_var)
+        self.text_var.set("Statusbar ...")
+        self.pb_text.pack(side=tk.LEFT)
+
+    def create_progressbar(self):
+        self.pb = ttk.Progressbar(
+            self,
+            orient=tk.HORIZONTAL,
+            length=100,
+            maximum=100,
+            mode="determinate",
+            variable=self.pb_var,
+        )
+        return self
+
+    def update_status(self, progress, text):
+        self.pb_var.set(progress)
+        self.pb.pack(side=tk.LEFT, anchor="nw", before=self.pb_text, padx=(0, 10))
+        self.text_var.set(text)
+
+    def update_text(self, text):
+        self.text_var.set(text)
 
 
 class MainFrame(ttk.Frame):
@@ -171,6 +242,8 @@ class MainFrame(ttk.Frame):
         self.table = EmployeeTable(self, self.filename)
         self.table.pack(fill=tk.BOTH, expand=True, anchor="nw")
         self.table.populate_data(filename)
+        self.statusbar = Statusbar(parent)
+        self.statusbar.pack(side=tk.BOTTOM, fill=tk.X, anchor="w")
 
 
 def main():
