@@ -108,7 +108,7 @@ def read_template(filename="template.html"):
 
 
 # create payroll for a employee (get employee dict)
-def create_payroll_html(employee, template, filename="payroll.html"):
+def template_to_html(employee, template, filename="payroll.html"):
     payroll = template.substitute(employee)
     with open(filename, "w", encoding="utf-8") as html_file:
         html_file.write(payroll)
@@ -174,7 +174,7 @@ def send_mail(conn, filename, name, email):
     emps = employees(sh)
     emp = employee(emps, name)
     template = read_template()
-    payroll_html = create_payroll_html(emp, template)
+    payroll_html = template_to_html(emp, template)
 
     filename = html_to_pdf(payroll_html, "payroll.pdf")
     # Open PDF file in binary mode

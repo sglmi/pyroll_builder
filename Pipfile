@@ -14,6 +14,7 @@ pdfcrowd = "*"
 xhtml2pdf = "*"
 pillow = "*"
 pymupdf = "*"
+ttkwidgets = "*"
 
 [requires]
 python_version = "3.8"

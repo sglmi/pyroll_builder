@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "8f49da6af3afb04b1707a06f952b3d4a7d179e5a8716aca09ab84219fcf1ee02"
+            "sha256": "467ee540b7fd63fa0be1610a55d39b16f36eb8ab3be07472ebc2f7a4fdf340d4"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -199,6 +199,13 @@
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==1.15.0"
         },
+        "ttkwidgets": {
+            "hashes": [
+                "sha256:107aa747e2f2459a7587793a9649b5a5717396487f7f542370cdc6dccf15447e"
+            ],
+            "index": "pypi",
+            "version": "==0.11.0"
+        },
         "webencodings": {
             "hashes": [
                 "sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78",
@@ -244,13 +251,6 @@
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
             "version": "==7.1.2"
-        },
-        "colorama": {
-            "hashes": [
-                "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"
-            ],
-            "markers": "sys_platform == 'win32'",
-            "version": "==0.4.4"
         },
         "isort": {
             "hashes": [

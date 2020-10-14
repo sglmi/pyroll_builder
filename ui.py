@@ -3,168 +3,144 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
-import time
+from ttkwidgets import CheckboxTreeview
 
 
-class Employee:
-    def __init__(self, filename):
-        self.filename = filename
-
-    def employees(self):
-        data = []
-        sheet = code.sheet(self.filename)
-        employees = code.employees(sheet)
-        names = code.items(employees, column_name="name")
-        emails = code.items(employees, column_name="email")
-        ids = range(len(names))
-        for eid, name, email in zip(ids, names, emails):
-            data.append({"id": eid, "name": name, "email": email})
-        self.number = len(data)
-        return data
-
-    def extract_name_email(self, esid):
-        emails = []
-        names = []
-        data = self.employees()
-        for item in data:
-            eid, name, email = item.values()
-            if eid in esid:
-                names.append(name)
-                emails.append(email)
-
-        return names, emails
-
-    def extract_name(self, e_id):
-        data = self.employees()
-        for item in data:
-            eid, name, _ = item.values()
-            if eid == e_id:
-                return name
-
-
-class Navebar(ttk.Frame):
+class Navebar(tk.Menu):
     def __init__(self, parent, mainframe, *arg, **kwargs):
         super().__init__(parent, *arg, *kwargs)
         self.parent = parent
         self.mainframe = mainframe
-        # self.mainframe = mainframe
-        self.filename = ""
-        menubar = tk.Menu()
         # File
-        filemenu = tk.Menu(menubar, tearoff=0)
+        filemenu = tk.Menu(self, tearoff=0)
         filemenu.add_command(label="Open", command=self.openfile)
         filemenu.add_command(label="Save As", command=self.saveas)
-        menubar.add_cascade(label="File", menu=filemenu)
+        self.add_cascade(label="File", menu=filemenu)
         # Help
-        payrollmenu = tk.Menu(menubar, tearoff=0)
+        payrollmenu = tk.Menu(self, tearoff=0)
         payrollmenu.add_command(label="Send Email", command=self.sendmail)
         payrollmenu.add_command(label="Preview", command=self.preview)
-        menubar.add_cascade(label="Payroll", menu=payrollmenu)
+        self.add_cascade(label="Payroll", menu=payrollmenu)
         # Help
-        helpmenu = tk.Menu(menubar, tearoff=0)
+        helpmenu = tk.Menu(self, tearoff=0)
         helpmenu.add_command(label="Guide")
         helpmenu.add_command(label="About")
-        menubar.add_cascade(label="Help", menu=helpmenu)
-        self.parent.config(menu=menubar)
+        self.add_cascade(label="Help", menu=helpmenu)
 
     def openfile(self):
-        pass
+        filename = filedialog.askopenfilename(
+            filetypes=(
+                ("Excel File", "*.xlsx"),
+                ("Excel File (old)", "xls"),
+                ("All files", "*.*"),
+            )
+        )
+        if filename:
+            self.mainframe.destroy()
+            self.mainframe = MainFrame(self.parent, filename)
+            self.mainframe.pack(fill=tk.BOTH, expand=True, anchor="nw")
 
     def saveas(self):
-        pass
+        tree = self.mainframe.table.tree
+        employess = self.mainframe.table.employees
+        names = []
+        for employee in employess:
+            eid, name, email = employee.values()
+            if eid in tree.get_checked():
+                names.append(name)
+        sh = code.sheet(self.mainframe.filename)
+        emps = code.employees(sh)
+        tmp = code.read_template()
+        for name in names:
+            emp = code.employee(emps, name)
+            html = code.template_to_html(emp, tmp)
+            pdf = code.html_to_pdf(html, f"{name}.pdf")
+            print("pdf created successfuly")
 
     def sendmail(self):
-        es_id = self.mainframe.employee_table.checkeds()
-        names, emails = self.mainframe.employee.extract_name_email(es_id)
-        conn = code.email_connection()
-        filename = self.mainframe.filename
-        for name, email in zip(names, emails):
-            code.send_mail(conn, filename, name, email)
-            print("email send to ", email, "successfuly.")
+        # es_id = self.mainframe.employee_table.checkeds()
+        # names, emails = self.mainframe.employee.extract_name_email(es_id)
+        # conn = code.email_connection()
+        # filename = self.mainframe.filename
+        # for name, email in zip(names, emails):
+        #     code.send_mail(conn, filename, name, email)
+        #     print("email send to ", email, "successfuly.")
+        pass
 
     def preview(self, eid=1):
-        window = tk.Toplevel(self.parent)
-        window.title("Payroll")
-        self.label = ttk.Label(window)
-        name = self.mainframe.employee.extract_name(eid)
-        sheet = code.sheet(self.mainframe.filename)
-        emps = code.employees(sheet)
-        emp = code.employee(emps, name)
-        tmp = code.read_template()
-        html = code.create_payroll_html(emp, tmp)
-        pdf = code.html_to_pdf(html, "payroll.pdf")
-        pix = code.pdf_to_image(pdf)
-        imgdata = code.get_image_bytes(pix)
-        tkimg = tk.PhotoImage(data=imgdata)
-        self.label.img = tkimg
-        self.label.config(image=self.label.img)
-        self.label.pack()
+        # window = tk.Toplevel(self.parent)
+        # window.title("Payroll")
+        # self.label = ttk.Label(window)
+        # name = self.mainframe.employee.extract_name(eid)
+        # sheet = code.sheet(self.mainframe.filename)
+        # emps = code.employees(sheet)
+        # emp = code.employee(emps, name)
+        # tmp = code.read_template()
+        # html = code.create_payroll_html(emp, tmp)
+        # pdf = code.html_to_pdf(html, "payroll.pdf")
+        # pix = code.pdf_to_image(pdf)
+        # imgdata = code.get_image_bytes(pix)
+        # tkimg = tk.PhotoImage(data=imgdata)
+        # self.label.img = tkimg
+        # self.label.config(image=self.label.img)
+        # self.label.pack()
+        pass
 
 
-class Table(tk.Canvas):
+class EmployeeTable(ttk.Frame):
     def __init__(self, parent, filename, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.filename = filename
-        self.bodyframe = ttk.Frame(self, relief="solid", padding=20)
-        self.bodyframe.pack(anchor="w", fill=tk.X)
-        self.check_all_var = tk.BooleanVar()
-        self.chbsvar = []
-        self.PADX = 40
-        self.PADY = 5
+        # tree and pack
+        self.tree = CheckboxTreeview(self)
+        self.tree.pack(fill=tk.BOTH, expand=True)
+        # tree option config
+        self._config()
+        self._headings()
+        self._scrollbar(parent)
+        # store all employees' id
+        self.employees = []
 
-    def header(self, *args, **kwargs):
-        headerframe = ttk.Frame(self.bodyframe, relief="solid")
-        headerframe.pack(
-            anchor="w",
-            fill=tk.X,
+    def _config(self):
+        self.tree.configure(
+            columns=("row", "name", "email"),
         )
-        ttk.Checkbutton(
-            headerframe, variable=self.check_all_var, command=self.checkall
-        ).grid(row=0, column=0)
+        self.tree.column("#0", minwidth=20, width=20)
+        self.tree.column("row", minwidth=10, width=10)
+        self.tree.column("name", minwidth=40, width=100)
 
-        for index, title in enumerate(args, 1):
-            ttk.Button(headerframe, text=title).grid(row=0, column=index)
+    def _headings(self):
+        self.tree.heading("#0", text="Check")
+        self.tree.heading("row", text="Row")
+        self.tree.heading("name", text="Name")
+        self.tree.heading("email", text="email")
 
-    def insert_row(self, eid, name, email):
-        rowframe = ttk.Frame(self.bodyframe, relief="solid")
+    def _scrollbar(self, parent):
+        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side=tk.RIGHT, anchor="nw", fill=tk.Y)
+        self.tree.configure(yscrollcommand=scrollbar.set)
 
-        var = tk.BooleanVar()
-        ttk.Checkbutton(rowframe, variable=var).grid(row=eid, column=0)
-        ttk.Label(rowframe, text=eid).grid(row=eid, column=1, sticky="w")
-        ttk.Label(rowframe, text=name).grid(row=eid, column=2)
-        ttk.Label(rowframe, text=email).grid(row=eid, column=3)
+    def populate_data(self, filename):
+        sheet = code.sheet(filename)
+        employees = code.employees(sheet)
+        names = code.items(employees, column_name="name")
+        emails = code.items(employees, column_name="email")
+        ids = range(len(names))
 
-        self.chbsvar.append(var)
-        rowframe.pack(anchor="w", fill=tk.X, pady=5)  # space betwen each row
-
-    def populate(self, data):
-        for item in data:
-            eid, name, email = item.values()
-            self.insert_row(eid + 1, name, email)
-
-    def checkall(self):
-        flag = self.check_all_var.get()
-        list(map(lambda x: x.set(flag), self.chbsvar))
-
-    def state(self):
-        return list(map((lambda var: var.get()), self.chbsvar))
-
-    def checkeds(self):
-        return [index for index, item in enumerate(self.state()) if item]
+        # populate row num, names and emails on mployee Tree
+        for i, name, email in zip(ids, names, emails):
+            self.tree.insert("", "end", iid=i, values=(i + 1, name, email))
+            employee = {"id": str(i), "name": name, "email": email}
+            self.employees.append(employee)
 
 
 class MainFrame(ttk.Frame):
     def __init__(self, parent, filename, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        # Mainmenu
         self.filename = filename
-        self.employee = Employee(filename)
-        self.employee_table = Table(parent, filename)
-        self.employee_table.header("Row", "Name", "Email")
-        self.data = self.employee.employees()
-        self.employee_table.populate(self.data)
-        self.employee_table.pack()
-        Navebar(parent, self)
+        self.table = EmployeeTable(self, self.filename)
+        self.table.pack(fill=tk.BOTH, expand=True, anchor="nw")
+        self.table.populate_data(filename)
 
 
 def main():
@@ -178,6 +154,10 @@ def main():
     # Main frame
     mainframe = MainFrame(root, FILENAME)
     mainframe.pack(fill=tk.BOTH, expand=True, anchor="nw")
+
+    # self
+    menubar = Navebar(root, mainframe)
+    root.config(menu=menubar)
 
     # root config
     root.mainloop()
