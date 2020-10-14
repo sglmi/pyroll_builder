@@ -34,6 +34,13 @@ class Employee:
 
         return names, emails
 
+    def extract_name(self, e_id):
+        data = self.employees()
+        for item in data:
+            eid, name, _ = item.values()
+            if eid == e_id:
+                return name
+
 
 class Navebar(ttk.Frame):
     def __init__(self, parent, mainframe, *arg, **kwargs):
@@ -75,33 +82,60 @@ class Navebar(ttk.Frame):
             code.send_mail(conn, filename, name, email)
             print("email send to ", email, "successfuly.")
 
-    def preview(self):
-        pass
+    def preview(self, eid=1):
+        window = tk.Toplevel(self.parent)
+        window.title("Payroll")
+        self.label = ttk.Label(window)
+        name = self.mainframe.employee.extract_name(eid)
+        sheet = code.sheet(self.mainframe.filename)
+        emps = code.employees(sheet)
+        emp = code.employee(emps, name)
+        tmp = code.read_template()
+        html = code.create_payroll_html(emp, tmp)
+        pdf = code.html_to_pdf(html, "payroll.pdf")
+        pix = code.pdf_to_image(pdf)
+        imgdata = code.get_image_bytes(pix)
+        tkimg = tk.PhotoImage(data=imgdata)
+        self.label.img = tkimg
+        self.label.config(image=self.label.img)
+        self.label.pack()
 
 
 class Table(tk.Canvas):
     def __init__(self, parent, filename, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.filename = filename
-        self.rowframe = ttk.Frame(self, relief="solid", padding=10)
-        self.rowframe.pack()
+        self.bodyframe = ttk.Frame(self, relief="solid", padding=20)
+        self.bodyframe.pack(anchor="w", fill=tk.X)
         self.check_all_var = tk.BooleanVar()
         self.chbsvar = []
+        self.PADX = 40
+        self.PADY = 5
 
     def header(self, *args, **kwargs):
+        headerframe = ttk.Frame(self.bodyframe, relief="solid")
+        headerframe.pack(
+            anchor="w",
+            fill=tk.X,
+        )
         ttk.Checkbutton(
-            self.rowframe, variable=self.check_all_var, command=self.checkall
+            headerframe, variable=self.check_all_var, command=self.checkall
         ).grid(row=0, column=0)
+
         for index, title in enumerate(args, 1):
-            ttk.Label(self.rowframe, text=title).grid(row=0, column=index, padx=30)
+            ttk.Button(headerframe, text=title).grid(row=0, column=index)
 
     def insert_row(self, eid, name, email):
+        rowframe = ttk.Frame(self.bodyframe, relief="solid")
+
         var = tk.BooleanVar()
-        ttk.Checkbutton(self.rowframe, variable=var).grid(row=eid, column=0)
-        ttk.Label(self.rowframe, text=eid).grid(row=eid, column=1)
-        ttk.Label(self.rowframe, text=name).grid(row=eid, column=2)
-        ttk.Label(self.rowframe, text=email).grid(row=eid, column=3)
+        ttk.Checkbutton(rowframe, variable=var).grid(row=eid, column=0)
+        ttk.Label(rowframe, text=eid).grid(row=eid, column=1, sticky="w")
+        ttk.Label(rowframe, text=name).grid(row=eid, column=2)
+        ttk.Label(rowframe, text=email).grid(row=eid, column=3)
+
         self.chbsvar.append(var)
+        rowframe.pack(anchor="w", fill=tk.X, pady=5)  # space betwen each row
 
     def populate(self, data):
         for item in data:
