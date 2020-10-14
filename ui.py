@@ -41,11 +41,20 @@ class Navebar(tk.Menu):
             self.mainframe.pack(fill=tk.BOTH, expand=True, anchor="nw")
 
     def saveas(self):
+        directory = filedialog.askdirectory()
+        if directory == ():  # if user click on cancel
+            return
+
         tree = self.mainframe.table.tree
+        if tree.get_checked() == []:  # if any employee not selected.
+            messagebox.showinfo(
+                "Employee Not Selected", "Select at least one employee to make pdf"
+            )
+            return
         employess = self.mainframe.table.employees
         names = []
         for employee in employess:
-            eid, name, email = employee.values()
+            eid, name, _ = employee.values()
             if eid in tree.get_checked():
                 names.append(name)
         sh = code.sheet(self.mainframe.filename)
@@ -54,10 +63,13 @@ class Navebar(tk.Menu):
         for name in names:
             emp = code.employee(emps, name)
             html = code.template_to_html(emp, tmp)
-            pdf = code.html_to_pdf(html, f"{name}.pdf")
-            print("pdf created successfuly")
+            pdf = code.html_to_pdf(html, f"{directory}/{name}.pdf")
+            print(f"pdf created successfuly {pdf}")
 
     def sendmail(self):
+        focus = self.mainframe.table.tree.focus()
+        print(focus)
+
         # es_id = self.mainframe.employee_table.checkeds()
         # names, emails = self.mainframe.employee.extract_name_email(es_id)
         # conn = code.email_connection()
@@ -94,12 +106,20 @@ class EmployeeTable(ttk.Frame):
         # tree and pack
         self.tree = CheckboxTreeview(self)
         self.tree.pack(fill=tk.BOTH, expand=True)
+
         # tree option config
         self._config()
         self._headings()
         self._scrollbar(parent)
+
         # store all employees' id
         self.employees = []
+
+        # tree bind, change color when clicked on row
+        self.tree.bind("<<TreeviewSelect>>", self.on_select_item)
+
+        # last selected item
+        self.last_selected_item = 0
 
     def _config(self):
         self.tree.configure(
@@ -120,6 +140,15 @@ class EmployeeTable(ttk.Frame):
         scrollbar.pack(side=tk.RIGHT, anchor="nw", fill=tk.Y)
         self.tree.configure(yscrollcommand=scrollbar.set)
 
+    def on_select_item(self, event):
+        # Remove highlight from last selected item
+        self.tree.tag_del(self.last_selected_item, "highlight")
+        item = self.tree.focus()
+        # Add highlight tag to focused item
+        self.tree.tag_add(item, "highlight")
+        self.tree.tag_configure("highlight", background="orange")
+        self.last_selected_item = item
+
     def populate_data(self, filename):
         sheet = code.sheet(filename)
         employees = code.employees(sheet)
@@ -130,6 +159,7 @@ class EmployeeTable(ttk.Frame):
         # populate row num, names and emails on mployee Tree
         for i, name, email in zip(ids, names, emails):
             self.tree.insert("", "end", iid=i, values=(i + 1, name, email))
+
             employee = {"id": str(i), "name": name, "email": email}
             self.employees.append(employee)
 
