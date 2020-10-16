@@ -117,8 +117,16 @@ class Navebar(tk.Menu):
         filename = self.mainframe.filename
         statusbar = self.mainframe.statusbar
         statusbar.display_progressbar()  # pack progressbar
+        sh = code.sheet(filename)
+        emps = code.employees(sh)
         for name, email in zip(names, emails):
-            num_sent += code.send_mail(conn, filename, name, email)
+            emp = code.employee(emps, name)
+            extra = {
+                "YEAR": emp.get("year"),
+                "MONTH": emp.get("month"),
+                "NAME": emp.get("name"),
+            }
+            num_sent += code.send_mail(conn, filename, email, extra)
             prc_sent = (num_sent / num_emails) * 100
             msg = f"Sending Email To {name}"
             # Progressbar

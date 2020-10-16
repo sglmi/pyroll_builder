@@ -162,24 +162,23 @@ def email_connection():
     return s
 
 
-def send_mail(conn, filename, name, email):
-    message_template = read_template("message.txt")
-
+def send_mail(conn, filename, email, extra):
     if email is None:
         return False
 
     msg = MIMEMultipart()  # create a message
-
+    name = extra.get("NAME")
+    message_template = read_template("message.html")
     # add in the actual person name to the message template
-    message = message_template.substitute(PERSON_NAME=name)
+    message = message_template.substitute(extra)
 
     # setup the parameters of the message
     msg["From"] = config.EMAIL_HOST_USER
     msg["To"] = email
-    msg["Subject"] = "This is TEST"
+    msg["Subject"] = "شرکت سامان آبراه"
 
     # add in the message body
-    msg.attach(MIMEText(message, "plain"))
+    msg.attach(MIMEText(message, "html"))
 
     # create pdf to send
     sh = sheet(filename)
