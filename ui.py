@@ -65,11 +65,22 @@ class Navebar(tk.Menu):
         sh = code.sheet(self.mainframe.filename)
         emps = code.employees(sh)
         tmp = code.read_template()
-        for name in names:
+        # Progress
+        statusbar = self.mainframe.statusbar
+        statusbar.display_progressbar()
+        num_pdfs = len(names)
+        for i, name in enumerate(names):
             emp = code.employee(emps, name)
             html = code.template_to_html(emp, tmp)
-            pdf = code.html_to_pdf(html, f"{directory}/{name}.pdf")
-            print(f"pdf created successfuly {pdf}")
+            pdf = code.html_to_pdf(html, f"{directory}/{i}.pdf")
+            prc_saved = (i / num_pdfs) * 100
+            text = f"pdf saved with name {pdf}"
+            # Progressbar
+            statusbar.update_progress(prc_saved, text)
+            self.parent.update_idletasks()
+        # Statusbar update
+        statusbar.text_var.set("All PDFs Saved!")
+        statusbar.progressbar.destroy()
 
     def checkall(self):
         eids = [employee.get("id") for employee in self.mainframe.table.employees]
@@ -95,22 +106,22 @@ class Navebar(tk.Menu):
                     names.append(name)
                     emails.append(email)
 
-        number_of_emails = sum(1 for email in emails if email is not None)
-        number_of_sent = 0
+        num_emails = sum(1 for email in emails if email is not None)
+        num_sent = 0
         conn = code.email_connection()
         filename = self.mainframe.filename
-        statusbar = self.mainframe.statusbar.create_progressbar()
+        statusbar = self.mainframe.statusbar
+        statusbar.display_progressbar()  # pack progressbar
         for name, email in zip(names, emails):
-            number_of_sent += code.send_mail(conn, filename, name, email)
-            precent_of_sent = (number_of_sent / number_of_emails) * 100
-            text = f"{number_of_sent} / {number_of_emails} Sending Email To {name}"
+            num_sent += code.send_mail(conn, filename, name, email)
+            prc_sent = (num_sent / num_emails) * 100
+            text = f"Sending Email To {name}"
             # Progressbar
-            statusbar.update_status(precent_of_sent, text)
+            statusbar.update_progress(prc_sent, text)
             self.parent.update_idletasks()
-
-            time.sleep(3)
-        statusbar.update_text("All emails sent successfuly.")
-        statusbar.pb.destroy()
+            # statusbar.display_label()
+        statusbar.text_var.set("All emails sent successfuly.")
+        statusbar.progressbar.destroy()
         conn.quit()
 
     def preview(self):
@@ -211,12 +222,8 @@ class Statusbar(ttk.Frame):
         super().__init__(parent, *args, **kwargs)
         self.text_var = tk.StringVar()
         self.pb_var = tk.IntVar()
-        self.pb_text = ttk.Label(self, textvariable=self.text_var)
-        self.text_var.set("Statusbar ...")
-        self.pb_text.pack(side=tk.LEFT)
-
-    def create_progressbar(self):
-        self.pb = ttk.Progressbar(
+        self.label = ttk.Label(self, textvariable=self.text_var)
+        self.progressbar = ttk.Progressbar(
             self,
             orient=tk.HORIZONTAL,
             length=100,
@@ -224,14 +231,18 @@ class Statusbar(ttk.Frame):
             mode="determinate",
             variable=self.pb_var,
         )
-        return self
 
-    def update_status(self, progress, text):
+    def display_label(self):
+        self.label.pack(side=tk.LEFT)
+
+    def display_progressbar(self):
+        self.progressbar.pack(side=tk.LEFT, anchor="nw", padx=(0, 10))
+
+    def update_progress(self, progress, text):
         self.pb_var.set(progress)
-        self.pb.pack(side=tk.LEFT, anchor="nw", before=self.pb_text, padx=(0, 10))
         self.text_var.set(text)
 
-    def update_text(self, text):
+    def update_label(self, text):
         self.text_var.set(text)
 
 
@@ -243,6 +254,8 @@ class MainFrame(ttk.Frame):
         self.table.pack(fill=tk.BOTH, expand=True, anchor="nw")
         self.table.populate_data(filename)
         self.statusbar = Statusbar(parent)
+        self.statusbar.text_var.set("Everything is ok.")
+        self.statusbar.display_label()
         self.statusbar.pack(side=tk.BOTTOM, fill=tk.X, anchor="w")
 
 
@@ -253,6 +266,11 @@ def main():
     root = tk.Tk()
     root.title("Payroll")
     root.geometry("550x400")
+    # root.attributes("-topmost", True)
+    root.deiconify()
+    # root.focus_force()
+    # root.update()
+    # root.update_idletasks()
 
     # Main frame
     mainframe = MainFrame(root, FILENAME)

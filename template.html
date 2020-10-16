@@ -1,10 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- ۸۸۶۸۱۵۰۷ -->
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <style>
-    .payroll {
+    @font-face {
+      font-family: yekan;
+      src: url(assets/fonts/Yekan.ttf);
+    }
+
+    @page {
+      size: A5;
+      margin: 10px;
+    }
+
+    body {
+      margin: 30px 30px;
+      font-family: "b nazanin";
+    }
+
+    body .payroll {
       border-collapse: collapse;
       width: 100%;
     }
@@ -21,16 +37,7 @@
       background-color: #dddddd;
     }
 
-    header p {
-      text-align: right;
-      /* float: left; */
-      margin-right: 100px;
-      direction: rtl;
-    }
 
-    img {
-      float: left;
-    }
 
     .bold_item {
       font-weight: bold;
@@ -39,12 +46,25 @@
 
     header {
       text-align: right;
-      direction: right;
-      margin-right: 100px;
+      direction: rtl;
+      margin-top: -20px;
     }
 
     header img {
       float: left;
+      margin-top: 5px;
+      margin-bottom: 10px;
+    }
+
+    #phone {
+      margin-right: 20px;
+      font-weight: normal;
+      font-size: 20px;
+    }
+
+    address {
+      font-style: normal;
+      margin-top: -10px;
     }
   </style>
 </head>
@@ -52,33 +72,12 @@
 
 <body>
   <header>
-    <img src="logo.png" alt="logo"><br>
-    <h3>شرکت مهندسین مشاور سامان آبراه</h3>
-    <p>آدرس: سعادت، خیابان ۲۵، نبش شادی، پلاک ۱، واحد ۱ و ۲</p>
-    <p>تلفن تماس: 4444444444</p>
+    <img src="assets/images/logo-mid.png" alt="logo">
+    <h2>
+      شرکت مهندسین مشاور سامان آبراه
+      <span id="phone">۸۸۶۸۱۵۰۷</span></h2>
+    <address>آدرس: سعادت، خیابان ۲۵، نبش شادی، پلاک ۱، واحد ۱ و ۲</address>
   </header>
-  <!-- <header>
-    <table border="0">
-      <tbody>
-        <tr>
-          <td>
-            <img src="logo.png" alt="logo">
-          </td>
-          <td>
-            <h3>شرکت مشاورین و مهندسین سامان آبراه</h3>
-          </td>
-
-        <tr>
-          <td colspan="2" style="text-align: right;">
-            <p>آدرس: سعادت، خیابان ۲۵، نبش شادی، پلاک ۱، واحد ۱ و ۲</p>
-            <p id="phone">تلفن تماس: 4444444444</p>
-          </td>
-        </tr>
-
-        </tr>
-      </tbody>
-    </table>
-  </header> -->
   <table class="payroll">
     <tbody>
       <tr>

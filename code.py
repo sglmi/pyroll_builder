@@ -1,5 +1,6 @@
 # Built-in packages
 import smtplib
+import os
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -118,12 +119,23 @@ def template_to_html(employee, template, filename="payroll.html"):
 def html_to_pdf(html_filename="payroll.html", pdf_filename="payroll.pdf"):
     options = {
         "encoding": "UTF-8",
+        "page-size": "A5",
+        "margin-top": "0cm",
+        "margin-bottom": "0cm",
+        "margin-left": "0cm",
+        "margin-right": "0cm",
+        "dpi": 400,
         "enable-local-file-access": "",
     }
-    # wk_path = pdfkit.configuration(
-    #     wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
-    # )
-    # configuration=wk_path
+    if os.name == "nt":
+        wk_path = pdfkit.configuration(
+            wkhtmltopdf=r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+        )
+        pdfkit.from_file(
+            html_filename, pdf_filename, options=options, configuration=wk_path
+        )
+        return pdf_filename
+
     pdfkit.from_file(html_filename, pdf_filename, options=options)
     return pdf_filename
 
@@ -159,7 +171,7 @@ def send_mail(conn, filename, name, email):
     msg = MIMEMultipart()  # create a message
 
     # add in the actual person name to the message template
-    message = message_template.substitute(PERSON_NAME=name.title())
+    message = message_template.substitute(PERSON_NAME=name)
 
     # setup the parameters of the message
     msg["From"] = config.EMAIL_HOST_USER
