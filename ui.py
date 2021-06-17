@@ -1,10 +1,10 @@
-import code
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
 from ttkwidgets import CheckboxTreeview
 import time
+import utils
 
 
 class Navebar(tk.Menu):
@@ -63,17 +63,17 @@ class Navebar(tk.Menu):
             eid, name, _ = employee.values()
             if eid in tree.get_checked():
                 names.append(name)
-        sh = code.sheet(self.mainframe.filename)
-        emps = code.employees(sh)
-        tmp = code.read_template()
+        sh = utils.sheet(self.mainframe.filename)
+        emps = utils.employees(sh)
+        tmp = utils.read_template()
         # Progress
         statusbar = self.mainframe.statusbar
         statusbar.display_progressbar()
         num_pdfs = len(names)
         for i, name in enumerate(names):
-            emp = code.employee(emps, name)
-            html = code.template_to_html(emp, tmp)
-            pdf = code.html_to_pdf(html, f"{directory}/{i}.pdf")
+            emp = utils.employee(emps, name)
+            html = utils.template_to_html(emp, tmp)
+            pdf = utils.html_to_pdf(html, f"{directory}/{i}.pdf")
             prc_saved = (i / num_pdfs) * 100
             text = f"pdf saved with name {pdf}"
             # Progressbar
@@ -113,20 +113,20 @@ class Navebar(tk.Menu):
             messagebox.showinfo("No Valid Emails", "There are not any valid email!!")
             return
         num_sent = 0
-        conn = code.email_connection()
+        conn = utils.email_connection()
         filename = self.mainframe.filename
         statusbar = self.mainframe.statusbar
         statusbar.display_progressbar()  # pack progressbar
-        sh = code.sheet(filename)
-        emps = code.employees(sh)
+        sh = utils.sheet(filename)
+        emps = utils.employees(sh)
         for name, email in zip(names, emails):
-            emp = code.employee(emps, name)
+            emp = utils.employee(emps, name)
             extra = {
                 "YEAR": emp.get("year"),
                 "MONTH": emp.get("month"),
                 "NAME": emp.get("name"),
             }
-            num_sent += code.send_mail(conn, filename, email, extra)
+            num_sent += utils.send_mail(conn, filename, email, extra)
             prc_sent = (num_sent / num_emails) * 100
             msg = f"Sending Email To {name}"
             # Progressbar
@@ -152,14 +152,14 @@ class Navebar(tk.Menu):
             eid, name, _ = employee.values()
             if eid == str(item):
                 break
-        sheet = code.sheet(self.mainframe.filename)
-        emps = code.employees(sheet)
-        emp = code.employee(emps, name)
-        tmp = code.read_template()
-        html = code.template_to_html(emp, tmp)
-        pdf = code.html_to_pdf(html, "payroll.pdf")
-        pix = code.pdf_to_image(pdf)
-        imgdata = code.get_image_bytes(pix)
+        sheet = utils.sheet(self.mainframe.filename)
+        emps = utils.employees(sheet)
+        emp = utils.employee(emps, name)
+        tmp = utils.read_template()
+        html = utils.template_to_html(emp, tmp)
+        pdf = utils.html_to_pdf(html, "payroll.pdf")
+        pix = utils.pdf_to_image(pdf)
+        imgdata = utils.get_image_bytes(pix)
         tkimg = tk.PhotoImage(data=imgdata)
         self.label.img = tkimg
         self.label.config(image=self.label.img)
@@ -217,10 +217,10 @@ class EmployeeTable(ttk.Frame):
         self.last_selected_item = item
 
     def populate_data(self, filename):
-        sheet = code.sheet(filename)
-        employees = code.employees(sheet)
-        names = code.items(employees, column_name="name")
-        emails = code.items(employees, column_name="email")
+        sheet = utils.sheet(filename)
+        employees = utils.employees(sheet)
+        names = utils.items(employees, column_name="name")
+        emails = utils.items(employees, column_name="email")
         ids = range(len(names))
 
         # populate row num, names and emails on mployee Tree

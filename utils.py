@@ -18,8 +18,8 @@ import config
 
 def sheet(filename):
     wb = load_workbook(filename, data_only=True)
-    sheet = wb.active
-    return sheet
+    sh = wb.active
+    return sh
 
 
 def headers(sheet):

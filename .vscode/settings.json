@@ -1,5 +1,0 @@
-{
-    "python.venvPath": "/home/saeid/.local/share/virtualenvs/payroll_builder-2TUGnNuU/",
-    "python.linting.pylintPath": "pylint",
-    "python.formatting.provider": "black",
-}
