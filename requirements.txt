@@ -1,0 +1,6 @@
+et-xmlfile==1.1.0
+openpyxl==3.0.9
+pdfkit==0.6.1
+Pillow==8.3.2
+PyMuPDF==1.18.19
+ttkwidgets==0.12.1
