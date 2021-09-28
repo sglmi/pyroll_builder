@@ -3,7 +3,6 @@ from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
 from ttkwidgets import CheckboxTreeview
-import time
 import utils
 
 
